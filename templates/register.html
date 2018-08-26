@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>注册页面</title>
+    <link rel="stylesheet" href="/static/blog/bs/css/bootstrap.css">
+    <style>
+        #avatar {
+            display: none;
+        }
+
+        #avatar_img {
+            margin-left: 20px;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+<h3>注册页面</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 col-lg-offset-3">
+            <form id="form">
+                {% csrf_token %}
+                <!--进行渲染form对象-->
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.auto_id }}">{{ field.label }}</label>
+                        {{ field }}<span class="error pull-right"></span>
+                    </div>
+                {% endfor %}
+                <div class="form-group">
+                    <label for="avatar">
+                        头像
+                        <img id="avatar_img" width="60px" height="60px" src="/static/blog/img/default.png" alt="">
+                    </label>
+                    <input type="file" id="avatar" name="avatar">
+                </div>
+                <input type="button" class="btn btn-default reg_btn" value="提交">
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/static/blog/js/jquery-3.3.1.min.js"></script>
+
+<!--编写js代码-->
+<script>
+    $("#avatar").change(function () {
+        //1、获取用户选中的文件对象；
+        var file_obj = $(this)[0].files[0];
+        //2、获取文件对象的路径；
+        var reader = new FileReader();
+        reader.readAsDataURL(file_obj);
+        //3、修改img的src属性值，src= 文件对象的路径；
+        reader.onload = function () {
+            $("#avatar_img").attr("src", reader.result)
+        };
+
+    });
+    //基于Ajax提交事件；
+    $(".reg_btn").click(function () {
+
+        var formdata = new FormData();
+        console.log($("#form").serializeArray());
+        var request_data = $("#form").serializeArray();
+        $.each(request_data, function (index, data) {
+            formdata.append(data.name, data.value)
+        });
+        formdata.append("avatar", $("#avatar")[0].files[0]);
+
+        /* var formdata = new FormData();
+          formdata.append("user",$("#id_user").val());
+          formdata.append("pwd",$("#id_pwd").val());
+          formdata.append("r_pwd",$("#id_r_pwd").val());
+          formdata.append("email",$("#id_email").val());
+          formdata.append("avatar",$("#avatar")[0].files[0]);
+          formdata.append("csrfmiddlewaretoken",$("[name = 'csrfmiddlewaretoken']").val());*/
+
+        $.ajax({
+            url: "",
+            type: "post",
+            contentType: false,
+            processData: false,
+            data: formdata,
+            success: function (data) {
+                console.log(data);
+                if (data.user) {
+                    //注册成功；
+                    location.href = "/login/"
+                } else {//注册失败
+                    //console.log(data.msg)
+                    //清空错误提示消息；
+                    $("span.error").html();
+                    $(".form-group").removeClass("has-error");
+                    //展示此次提提交的信息；
+                    $.each(data.msg, function (field, error_list) {
+                        console.log(field, error_list);
+                        if (field == "__all__") {
+                            $("#id_r_pwd").next().html(error_list[0]).parent().addClass("has-error")
+                        }
+                        $("#id_" + field).next().html(error_list[0]);
+                        $("#id_" + field).parent().addClass("has-error");
+                    })
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
